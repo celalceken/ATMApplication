@@ -49,3 +49,4 @@ bin/
 *.tar.gz
 *.rar
 .idea
+/ATMUygulamasi.iml

@@ -34,8 +34,8 @@ public class ATM {
         if (hesapNumarasi != 0) {
             ekran.mesajGoruntule("şifreniz");
             int sifre= tusTakimi.veriAl();
-            IBankaBilgiSistemi bankaBilgiSistemi=new BankaBilgiSistemi(new SanalVeritabaniSurucu());
-            //IBankaBilgiSistemi bankaBilgiSistemi=new BankaBilgiSistemi(new PostgreSQLSurucu());
+            //IBankaBilgiSistemi bankaBilgiSistemi=new BankaBilgiSistemi(new SanalVeritabaniSurucu());
+            IBankaBilgiSistemi bankaBilgiSistemi=new BankaBilgiSistemi(new PostgreSQLSurucu());
 
             MusteriHesabi musteriHesabi = this.kullaniciDogrula(hesapNumarasi,sifre, bankaBilgiSistemi);
 			//MusteriHesabi musteriHesabi = this.kullaniciDogrula(hesapNumarasi, bankaBilgiSistemi);
