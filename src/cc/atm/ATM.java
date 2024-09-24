@@ -1,119 +1,115 @@
 /**
- * ATM sınıfı işlemlerin başlatıldığı modüldür.
+ * The ATM class is the module where operations are initiated.
  *
- * @ author	Celal Çeken
+ * @author  Celal Çeken
  */
 package cc.atm;
 
-
-import cc.atm.veritabani.PostgreSQLSurucu;
-import cc.atm.veritabani.SanalVeritabaniSurucu;
+import cc.atm.database.VirtualDatabaseDriver;
 
 public class ATM {
-    private final IEkran ekran;
-    private final ITusTakimi tusTakimi;
-    private final IParaBolmesi paraBolmesi;
-    private final IKartBolmesi kartBolmesi;
+    private final IScreen screen;
+    private final IKeypad keypad;
+    private final ICashDispenser cashDispenser;
+    private final ICardSlot cardSlot;
 
-    private static final int BAKIYE_GORUNTULE = 1;
-    private static final int PARA_CEKME = 2;
-    private static final int PARA_YATIRMA = 3;
-    private static final int CIKIS = 4;
+    private static final int VIEW_BALANCE = 1;
+    private static final int WITHDRAW_CASH = 2;
+    private static final int DEPOSIT_CASH = 3;
+    private static final int EXIT = 4;
 
     public ATM() {
-        ekran = new Ekran();
-        tusTakimi = new TusTakimi();
-        paraBolmesi = new ParaBolmesi();
-        kartBolmesi = new KartBolmesi();
+        screen = new Screen();
+        keypad = new Keypad();
+        cashDispenser = new CashDispenser();
+        cardSlot = new CardSlot();
     }
 
-    public void basla() {
-        ekran.mesajGoruntule("Lütfen kartınızı bölmeye takınız 123...");
-        Araclar.bekle();
-        int hesapNumarasi = this.kartDogrulama();
-        if (hesapNumarasi != 0) {
-            ekran.mesajGoruntule("şifreniz");
-            int sifre= tusTakimi.veriAl();
-            //IBankaBilgiSistemi bankaBilgiSistemi=new BankaBilgiSistemi(new SanalVeritabaniSurucu());
-            IBankaBilgiSistemi bankaBilgiSistemi=new BankaBilgiSistemi(new PostgreSQLSurucu());
+    public void start() {
+        screen.displayMessage("Please insert your card into the slot 123...");
+        Utilities.waiting();
+        int accountNumber = this.verifyCard();
+        if (accountNumber != 0) {
+            screen.displayMessage("Enter your PIN (2)");
+            int pin = keypad.getInput();
+            IBankInformationSystem bankInformationSystem = new BankInformationSystem(new VirtualDatabaseDriver());
+            // IBankInformationSystem bankInformationSystem = new BankInformationSystem(new PostgreSQLDriver());
 
-            MusteriHesabi musteriHesabi = this.kullaniciDogrula(hesapNumarasi,sifre, bankaBilgiSistemi);
-			//MusteriHesabi musteriHesabi = this.kullaniciDogrula(hesapNumarasi, bankaBilgiSistemi);
-            if (musteriHesabi != null) {
-                ekran.mesajGoruntule("Kullanıcı doğrulama işlemi başarılı...:" + musteriHesabi);
-                islemSecimi(bankaBilgiSistemi, musteriHesabi);
+            CustomerAccount customerAccount = this.verifyUser(accountNumber, pin, bankInformationSystem);
+            // CustomerAccount customerAccount = this.verifyUser(accountNumber, bankInformationSystem);
+            if (customerAccount != null) {
+                screen.displayMessage("User verification successful...: " + customerAccount);
+                chooseTransaction(bankInformationSystem, customerAccount);
             } else {
-                ekran.mesajGoruntule("hesabınız doğrulanamadı");
-                kartBolmesi.kartCikart();
+                screen.displayMessage("Your account could not be verified");
+                cardSlot.ejectCard();
             }
         } else {
-            ekran.mesajGoruntule("Kartınız doğrulanamadı");
-            kartBolmesi.kartCikart();
+            screen.displayMessage("Your card could not be verified");
+            cardSlot.ejectCard();
         }
     }
 
-    private int kartDogrulama() {
-        return kartBolmesi.kartAl();
+    private int verifyCard() {
+        return cardSlot.insertCard();
     }
 
-	private MusteriHesabi kullaniciDogrula(int hesapNumarasi, int sifre, IBankaBilgiSistemi bankaBilgiSistemi) {
+    private CustomerAccount verifyUser(int accountNumber, int pin, IBankInformationSystem bankInformationSystem) {
+        // private CustomerAccount verifyUser(int accountNumber, IBankInformationSystem bankInformationSystem) {
 
-    //private MusteriHesabi kullaniciDogrula(int hesapNumarasi,  IBankaBilgiSistemi bankaBilgiSistemi) {
-
-        return bankaBilgiSistemi.kullaniciDogrula(hesapNumarasi, sifre);
-        // doğrulanamama durumunda tekrar şifre girilmesi, 3 kez hatalı  ise kartın yutulması
-        // işlemleri burada ele alınmalı
-        /*int sifre;
-        int sayac = 0;
-        MusteriHesabi musteriHesabi = null;
+        return bankInformationSystem.verifyUser(accountNumber, pin);
+        // In case of failure to verify, re-enter the PIN, and if incorrect 3 times, the card should be retained.
+        /*int pin;
+        int counter = 0;
+        CustomerAccount customerAccount = null;
         do {
-			ekran.mesajGoruntule("şifreniz");
-            sifre = tusTakimi.veriAl();
-            musteriHesabi = bankaBilgiSistemi.kullaniciDogrula(hesapNumarasi, sifre);
-        } while (musteriHesabi == null && ++sayac < 3);
+            screen.displayMessage("Enter your PIN");
+            pin = keypad.getInput();
+            customerAccount = bankInformationSystem.verifyUser(accountNumber, pin);
+        } while (customerAccount == null && ++counter < 3);
 
-        return musteriHesabi;*/
+        return customerAccount;*/
     }
 
-    private void islemSecimi(IBankaBilgiSistemi bankaBilgiSistemi, MusteriHesabi musteriHesabi) {
-        int secim;
+    private void chooseTransaction(IBankInformationSystem bankInformationSystem, CustomerAccount customerAccount) {
+        int selection;
         do {
-            secim = anaMenuyuGoster();
-            ekran.ekranTemizle();
-            switch (secim) {
-                case BAKIYE_GORUNTULE:
-                    Islem bakiyeGoruntuleme = new BakiyeGoruntuleme(ekran, tusTakimi, musteriHesabi);
-                    bakiyeGoruntuleme.islemYap();
+            selection = showMainMenu();
+            screen.clearScreen();
+            switch (selection) {
+                case VIEW_BALANCE:
+                    Transaction viewBalance = new ViewBalance(screen, keypad, customerAccount);
+                    viewBalance.execute();
                     break;
-                case PARA_CEKME:
-                    Islem paraCekme = new ParaCekme(bankaBilgiSistemi, ekran, tusTakimi, musteriHesabi, paraBolmesi);
-                    paraCekme.islemYap();
-                    break;
-
-                case PARA_YATIRMA:
-                    Islem paraYatirma = new ParaYatirma(bankaBilgiSistemi, ekran, tusTakimi, musteriHesabi, paraBolmesi);
-                    paraYatirma.islemYap();
+                case WITHDRAW_CASH:
+                    Transaction withdrawCash = new CashWithdrawal(bankInformationSystem, screen, keypad, customerAccount, cashDispenser);
+                    withdrawCash.execute();
                     break;
 
-                case CIKIS:
-                    ekran.mesajGoruntule("Çıkılıyor");
-                    kartBolmesi.kartCikart();
+                case DEPOSIT_CASH:
+                    Transaction depositCash = new CashDeposit(bankInformationSystem, screen, keypad, customerAccount, cashDispenser);
+                    depositCash.execute();
+                    break;
+
+                case EXIT:
+                    screen.displayMessage("Exiting");
+                    cardSlot.ejectCard();
                     break;
                 default:
-                    ekran.mesajGoruntule("1-4 arasında bir sayı girmelisiniz");
+                    screen.displayMessage("You must enter a number between 1 and 4");
             }
-        } while (secim != 4);
+        } while (selection != 4);
     }
 
-    private int anaMenuyuGoster() {
-        ekran.mesajGoruntule("**********************************************");
-        ekran.mesajGoruntule("Ana Menu");
-        ekran.mesajGoruntule("1-Bakiye Görüntüle");
-        ekran.mesajGoruntule("2-Para Çek");
-        ekran.mesajGoruntule("3-Para Yatır");
-        ekran.mesajGoruntule("4-Cikis");
-        ekran.mesajGoruntule("Seciminiz:");
-        ekran.mesajGoruntule("**********************************************");
-        return tusTakimi.veriAl();
+    private int showMainMenu() {
+        screen.displayMessage("**********************************************");
+        screen.displayMessage("Main Menu");
+        screen.displayMessage("1-View Balance");
+        screen.displayMessage("2-Withdraw Cash");
+        screen.displayMessage("3-Deposit Cash");
+        screen.displayMessage("4-Exit");
+        screen.displayMessage("Your Selection:");
+        screen.displayMessage("**********************************************");
+        return keypad.getInput();
     }
 }
