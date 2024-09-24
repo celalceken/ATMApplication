@@ -33,4 +33,4 @@ The ATM system consists of the following hardware components:
     The ATM system dispenses the cash and the receipt.
     The cardholder receives the cash and the receipt.
 
-#### For the models and Implementation refer to: https://github.com/celalceken/ATMApplication/tree/cc-eng/src/cc/atm
+#### For the models and Implementation, refer to: https://github.com/celalceken/ATMApplication/tree/cc-eng/src/cc/atm
