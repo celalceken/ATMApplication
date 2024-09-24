@@ -1,11 +1,11 @@
-* ATM uygulamasının analiz aşaması sınıf şeması
+* ATM Class Diagram
 
 ![](https://github.com/celalceken/NesneYonelimliAnalizVeTasarimDersiUygulamalari/blob/master/Sekiller/06/0601.png)
 
-* Kullanıcı doğrulama kullanım durumunun sıralama şeması
+* Sequence Diagram for User Authentication
 
 ![](https://github.com/celalceken/NesneYonelimliAnalizVeTasarimDersiUygulamalari/blob/master/Sekiller/06/0602.png)
 
-* Para Çekme kullanım durumunun sıralama şeması
+* Sequence Diagram for Cash Withdrawal
 
 ![](https://github.com/celalceken/NesneYonelimliAnalizVeTasarimDersiUygulamalari/blob/master/Sekiller/06/0603.png)
